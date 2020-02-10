@@ -11,6 +11,14 @@ Supports CI-File (native style Codeigniter errors), File (RotatingFileHandler), 
 
 Support now included to multi-line output into logs
 
+Changes from Upstream
+---------------------
+
+* Added support for the Loggly driver
+* Roughed in support for PHP Console driver - note that in testing this segfaulted PHP (7.4.0), not sure why or where
+* Updated config to punt less things into the global config space
+* Updated config to make it somewhat nicer to deal with additional drivers
+
 Installation
 ------------
 * Install monolog with ```composer require monolog/monolog```

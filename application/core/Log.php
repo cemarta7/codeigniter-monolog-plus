@@ -14,11 +14,14 @@
 use Monolog\Logger;
 use Monolog\ErrorHandler;
 use Monolog\Formatter\LineFormatter;
+use Monolog\Formatter\LogglyFormatter;
+use Monolog\Handler\LogglyHandler;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Handler\NewRelicHandler;
 use Monolog\Handler\HipChatHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\SyslogUdpHandler;
+use Monolog\Handler\PHPConsoleHandler;
 use Monolog\Processor\IntrospectionProcessor;
 
 // Make sure to install graylog2/gelf-php - composer require graylog2/gelf-php
@@ -130,6 +133,32 @@ class CI_Log
 					$handler->setFormatter($formatter);					
 					break;
 
+				case 'loggly':	
+					$loggly_config = $this->config['ci_monolog']['loggly'];
+
+					$threshold = Logger::ERROR;
+
+					if($this->config['threshold'] == 4) {
+						$threshold = Logger::DEBUG;
+					} elseif($this->config['threshold'] == 3) {
+						$threshold = Logger::DEBUG;
+					} elseif($this->config['threshold'] == 2) {
+						$threshold = Logger::INFO;
+					} elseif($this->config['threshold'] == 1) {
+						$threshold = Logger::ERROR;
+					}
+
+					$handler = new LogglyHandler($loggly_config['token'] . '/tag/monolog', $threshold);
+					$formatter = new LogglyFormatter();
+					break;
+
+				case 'phpconsole':
+					if(ENVIRONMENT !== 'development' && ENVIRONMENT !== 'testing') {
+						trigger_error('CI Monolog: Environment is ' . ENVIRONMENT . ', not activating PHP Console error logging.', E_USER_WARNING);
+					} else {
+						$handler = new PHPConsoleHandler();
+					}
+					break;
 
 				default:
 					exit('log handler not supported: ' . $value . "\n");
@@ -156,7 +185,7 @@ class CI_Log
 		// verify error level
 		if (!isset($this->_levels[$level]))
 		{
-			$this->log->addError('unknown error level: ' . $level);
+			$this->log->error('unknown error level: ' . $level);
 			$level = 'ALL';
 		}
 
@@ -179,16 +208,16 @@ class CI_Log
 			switch ($level)
 			{
 				case 'ERROR':
-					$this->log->addError($msg);
+					$this->log->error($msg);
 					break;
 
 				case 'DEBUG':
-					$this->log->addDebug($msg);
+					$this->log->debug($msg);
 					break;
 
 				case 'ALL':
 				case 'INFO':
-					$this->log->addInfo($msg);
+					$this->log->info($msg);
 					break;
 			}
 		}

@@ -12,23 +12,23 @@
 
 
 /* GENERAL OPTIONS */
-$config['handlers'] = array('ci_file', 'file'); // valid handlers are ci_file | file | new_relic | hipchat | stderr | papertrail | gelf
+$config['handlers'] = array('ci_file', 'loggly'); // valid handlers are ci_file | file | new_relic | hipchat | stderr | papertrail | gelf | loggly | phpconsole
 $config['channel'] = ENVIRONMENT; // channel name which appears on each line of log
-$config['threshold'] = '1'; // 'ERROR' => '1', 'DEBUG' => '2',  'INFO' => '3', 'ALL' => '4'
+$config['threshold'] = 1; // 'ERROR' => '1', 'DEBUG' => '2',  'INFO' => '3', 'ALL' => '4'
 $config['introspection_processor'] = TRUE; // add some meta data such as controller and line number to log messages
 
 /* CI FILE - DEFAULT CODEIGNITER LOG FILE STRUCTURE
 * Log to default CI log directory (must be writable ie. chmod 757).
 * Filename will be encoded to current system date, ie. YYYY-MM-DD-ci.log
 */
-$config['ci_file_logfile'] = '/application/logs/log.php';
+$config['ci_file_logfile'] = APPPATH . '/logs/log.php';
 $config['ci_file_multiline'] = TRUE; //add newlines to the output
 
 /* FILE HANDLER OPTIONS
  * Log to default CI log directory (must be writable ie. chmod 757).
  * Filename will be encoded to current system date, ie. YYYY-MM-DD-ci.log
 */
-$config['file_logfile'] = '/application/logs/ci.log';
+$config['file_logfile'] = APPPATH . '/logs/ci.log';
 $config['file_multiline'] = TRUE; //add newlines to the output
 
 /* NEW RELIC OPTIONS */
@@ -49,6 +49,17 @@ $config['papertrail_multiline'] = TRUE; //add newlines to the output
 /* GELF OPTIONS */
 $config['gelf_host'] = ''; //xxxx.papertrailapp.com
 $config['gelf_port'] = ''; //port number
+
+/*
+ * Loggly options
+ * 
+ * The Loggly support only has one option - 'token'. Get your customer token
+ * from the setup page in Loggly and put it here. 
+ *
+ * Docs: https://www.loggly.com/docs/php-monolog/
+ *
+*/
+$config['ci_monolog']['loggly']['token'] = ''; 
 
 // exclusion list for pesky messages which you may wish to temporarily suppress with strpos() match
 $config['exclusion_list'] = array();
