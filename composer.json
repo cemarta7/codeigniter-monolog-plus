@@ -1,4 +1,5 @@
 {
+	"name": "jkachel/codeigniter-monolog-plus",
     "require": {
         "graylog2/gelf-php": "^1.5",
         "monolog/monolog": "^1.23"        

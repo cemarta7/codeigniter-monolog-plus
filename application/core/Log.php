@@ -1,6 +1,8 @@
 <?php if (!defined('BASEPATH')) { exit('No direct script access allowed');
 }
 
+namespace CIMonologPlus;
+
 /*
  * CodeIgniter Monolog Plus
  *
