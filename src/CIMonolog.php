@@ -155,7 +155,7 @@ class CIMonolog
 				case 'syslogudp': 
 					$syslogudp_config = $this->config['ci_monolog']['syslogudp'];
 
-					$handler = new SyslogUdpHandler($syslogudp_config['host'], is_int($syslogudp_config['port']) ? $syslogudp_config['port'] : 514, null, $threshold, $syslogudp_config['bubble'] === true, $syslogudp_config['ident']);
+					$handler = new SyslogUdpHandler($syslogudp_config['host'], is_int($syslogudp_config['port']) ? $syslogudp_config['port'] : 514, LOG_USER, $threshold, $syslogudp_config['bubble'] === true, $syslogudp_config['ident']);
 					break;
 
 				case 'phpconsole':
