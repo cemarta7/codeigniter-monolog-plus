@@ -29,9 +29,9 @@ This package isn't in Packagist (yet) so installation must be done manually for 
 * Configure this repo in your project's composer.json. See https://getcomposer.org/doc/02-libraries.md#publishing-to-a-vcs - the second code block there has a "repositories" option that you'll need to add. 
 * Add the package. `composer require jkachel/codeigniter-monolog-plus:dev-master`
 * Install the shim and config file.
-** Optionally: run the installer. cd into the `vendor/jkachel/codeigniter-monolog-plus` folder and then run `installer.php`. This will copy the files needed to integrate the library with a standard CodeIgniter 3 install. It will try to figure it out on its own; if it can't, you will be prompted for the base path for your project.
-** You can also just copy the files from application/ yourself. They go in the same places they are in the application root.
-** Make sure you rename monolog-dist.php to monolog.php in the config folder.
+  * Optionally: run the installer. cd into the `vendor/jkachel/codeigniter-monolog-plus` folder and then run `installer.php`. This will copy the files needed to integrate the library with a standard CodeIgniter 3 install. It will try to figure it out on its own; if it can't, you will be prompted for the base path for your project.
+  * You can also just copy the files from application/ yourself. They go in the same places they are in the application root.
+  * Make sure you rename monolog-dist.php to monolog.php in the config folder.
 * Update the config file. 
 * Enable Composer support in application/config/config.php. You will probably need to set the path explicitly, `BASEPATH . '/vendor/autoload.php'` tends to work. Otherwise, CI expects the Composer stuff to be in application/. 
 
