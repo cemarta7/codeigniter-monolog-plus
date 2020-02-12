@@ -15,7 +15,7 @@ if(!defined(READLINE_LIB)) {
 
 echo "Current directory is: " . __DIR__ . "\n";
 
-if(strotolower(trim(readline("Automatically install support stuff? (y/n)")) == 'y') {
+if(strotolower(trim(readline("Automatically install support stuff? (y/n)"))) == 'y') {
 	$ci_base = __DIR__ . '/../../../';
 
 	if(!is_dir($ci_base . 'application/core')) {
