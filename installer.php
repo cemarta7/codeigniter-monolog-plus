@@ -8,7 +8,7 @@
  * step or two.
 */
 
-if(!defined(READLINE_LIB)) {
+if(!extension_loaded('readline')) {
 	echo "CI Monolog Plus installer failed: no readline support in PHP. You'll have to copy the files in " . __DIR__ . "/application yourself.\n";
 	exit();
 }
