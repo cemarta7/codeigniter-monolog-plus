@@ -13,7 +13,7 @@
     	}
     },
     "scripts": {
-    	"post-install-cmd": [
+    	"cimp-install": [
     		"php installer.php"
     	]
     }
