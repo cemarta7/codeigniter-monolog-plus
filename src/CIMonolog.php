@@ -152,6 +152,12 @@ class CIMonolog
 					$formatter = new LogglyFormatter();
 					break;
 
+				case 'syslogudp': 
+					$syslogudp_config = $this->config['ci_monolog']['syslogudp'];
+
+					$handler = new SyslogUdpHandler($syslogudp_config['host'], is_int($syslogudp_config['port']) ? $syslogudp_config['port'] : 514, null, $threshold, $syslogudp_config['bubble'] === true, $syslogudp_config['ident']);
+					break;
+
 				case 'phpconsole':
 					if(ENVIRONMENT !== 'development' && ENVIRONMENT !== 'testing') {
 						trigger_error('CI Monolog: Environment is ' . ENVIRONMENT . ', not activating PHP Console error logging.', E_USER_WARNING);

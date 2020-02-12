@@ -61,5 +61,20 @@ $config['gelf_port'] = ''; //port number
 */
 $config['ci_monolog']['loggly']['token'] = ''; 
 
+/*
+ * SyslogUdp options
+ *
+ * This is different than the Syslog handler and expects to connect to a server
+ * over UDP. 
+ *
+*/
+
+$config['ci_monolog']['syslogudp'] = [
+	'host' => 'localhost', // The hostname or IP to connect to.
+	'port' => 514, // The port - 514 is the default. 
+	'ident' => 'Applicaiton', // An identifier for your project. Set this to something unique so it will be easy to find in the actual log.
+	'bubble' => true // Whether messages can bubble up the stack or not (see docs for your particular syslogd server)
+];
+
 // exclusion list for pesky messages which you may wish to temporarily suppress with strpos() match
 $config['exclusion_list'] = array();
