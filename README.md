@@ -19,29 +19,20 @@ Changes from Upstream
 * Updated config to punt less things into the global config space
 * Updated config to make it somewhat nicer to deal with additional drivers
 * Better composer/autoload integration: **The install instructions are much different from upstream!**
+* A semi-automated installer - will copy the shim and config file over for you
 
 Installation
 ------------
 
 This package isn't in Packagist (yet) so installation must be done manually for now. 
  
-* Configure this repo in your project's composer.json. See https://getcomposer.org/doc/02-libraries.md#publishing-to-a-vcs - the second code block there has a "repositories" option that you'll need to add. You will also need to manually add the "jkachel/codeigniter-monolog-plus" to your "require" section.
-* Install the library: `composer install`
-* Copy the config file to the CodeIgniter config file folder. The config file is in vendor/jkachel/codeigniter-monolog-plus/application/config/monolog-dist.php - copy it to "monolog.php" in your application/config folder.
-* Update the config appropriately. If you're using the Loggly driver, you will need to get a token from your account; see the config file for info. 
-* Create a shim for the CI_Log class. This can be as simple as this:
-```php
-<?php
-defined('BASEPATH') OR exit('No direct script access allowed');
-
-use CIMonologPlus\CIMonolog;
-
-class CI_Log extends CIMonolog {
-	public function __construct() {
-		parent::__construct();
-	}
-}
-```
+* Configure this repo in your project's composer.json. See https://getcomposer.org/doc/02-libraries.md#publishing-to-a-vcs - the second code block there has a "repositories" option that you'll need to add. 
+* Add the package. `composer require jkachel/codeigniter-monolog-plus:dev-master`
+* Install the shim and config file.
+** Optionally: run the installer. cd into the `vendor/jkachel/codeigniter-monolog-plus` folder and then run `installer.php`. This will copy the files needed to integrate the library with a standard CodeIgniter 3 install. It will try to figure it out on its own; if it can't, you will be prompted for the base path for your project.
+** You can also just copy the files from application/ yourself. They go in the same places they are in the application root.
+** Make sure you rename monolog-dist.php to monolog.php in the config folder.
+* Update the config file. 
 * Enable Composer support in application/config/config.php. You will probably need to set the path explicitly, `BASEPATH . '/vendor/autoload.php'` tends to work. Otherwise, CI expects the Composer stuff to be in application/. 
 
 Usage
