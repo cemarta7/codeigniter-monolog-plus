@@ -84,6 +84,19 @@ class CIMonolog
 			$this->log->pushProcessor(new IntrospectionProcessor());
 		}
 
+		// Set logging threshold.
+		$threshold = Logger::ERROR;
+
+		if($this->config['threshold'] == 4) {
+			$threshold = Logger::DEBUG;
+		} elseif($this->config['threshold'] == 3) {
+			$threshold = Logger::DEBUG;
+		} elseif($this->config['threshold'] == 2) {
+			$threshold = Logger::INFO;
+		} else {
+			$threshold = Logger::ERROR;
+		}
+
 		// decide which handler(s) to use
   	foreach ($this->config['handlers'] as $value)
 		{
@@ -135,18 +148,6 @@ class CIMonolog
 
 				case 'loggly':	
 					$loggly_config = $this->config['ci_monolog']['loggly'];
-
-					$threshold = Logger::ERROR;
-
-					if($this->config['threshold'] == 4) {
-						$threshold = Logger::DEBUG;
-					} elseif($this->config['threshold'] == 3) {
-						$threshold = Logger::DEBUG;
-					} elseif($this->config['threshold'] == 2) {
-						$threshold = Logger::INFO;
-					} elseif($this->config['threshold'] == 1) {
-						$threshold = Logger::ERROR;
-					}
 
 					$handler = new LogglyHandler($loggly_config['token'] . '/tag/monolog', $threshold);
 					$formatter = new LogglyFormatter();
