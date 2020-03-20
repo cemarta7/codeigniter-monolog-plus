@@ -49,12 +49,21 @@ class CIMonolog
 	// config placeholder
 	protected $config = array();
 
-
 	/**
 	 * prepare logging environment with configuration variables
 	 */
 	public function __construct()
 	{
+		// Step 0: register a failsafe logger - if this thing can't initialize, it will use this instead
+		// and this also gives me the ability to log that it broke
+		// If the standard CI log directory isn't writable, this will fail also.
+		// If the preflight checks don't pass, you'll get the failsafe handler - otherwise we'll spin up a new Monolog instance and jettison this one
+
+		$failsafe = new Logger('CIMonologFailsafe');
+		$failsafe->pushHandler(new Monolog\Handler\StreamHandler(APPPATH . '/logs/log-failsafe.php'), Logger::DEBUG);
+
+		// Step 1: grab configuration and do a few preflight checks
+
 		// copied functionality from system/core/Common.php, as the whole CI infrastructure is not available yet
 		if (!defined('ENVIRONMENT') OR !file_exists($file_path = APPPATH . 'config/' . ENVIRONMENT . '/monolog.php'))
 		{
@@ -62,121 +71,127 @@ class CIMonolog
 		}
 
 		// Fetch the config file
-		if (file_exists($file_path))
-		{
-		    require($file_path);
+		try {
+			require($file_path);
+		} catch(\Exception $e) {
+			$failsafe->log(Logger::ERROR, 'Configuration file doesn\'t exist! ' . $e->getMessage());
+		    $this->log = $failsafe;
+		    return;
 		}
-		else
-		{
-		    exit('monolog.php config does not exist');
+
+		// Check the config array to make sure it's valid
+		if(!$this->array_keys_exist(['handlers', 'priority'], $cimp_config)) {
+			$failsafe->log(Logger::ERROR, 'Configuration file doesn\'t set handlers or priority properly');
+			$this->log = $failsafe;
+			return;
+		}
+
+		if(count($cimp_config['priority']) == 0) {
+			$failsafe->log(Logger::ERROR, 'Nothing set for priority. This is probably not what you want.');
+			$this->log = $failsafe;
+			return;
+		}
+
+		if(count(array_keys($cimp_config['handlers'])) == 0) {
+			$failsafe->log(Logger::ERROR, 'Handlers aren\'t set up right. This is probably not what you want.');
+			$this->log = $failsafe;
+			return;
 		}
 
 		// make $config from config/monolog.php accessible to $this->write_log()
 		$this->config = $config;
 
-		$this->log = new Logger($this->config['channel']);
+		// Step 2: spin up the Monolog instance and get going
+
+		$this->log = new Logger($cimp_config['channel']);
+
 		// detect and register all PHP errors in this log hence forth
 		ErrorHandler::register($this->log);
 
 		if ($this->config['introspection_processor'])
 		{
 			// add controller and line number info to each log message
-			$this->log->pushProcessor(new IntrospectionProcessor());
+			$this->log->pushProcessor(new Monolog\Processor\IntrospectionProcessor());
 		}
 
-		// Set logging threshold.
-		$threshold = Logger::ERROR;
+		$handlersAdded = 0;
 
-		if($this->config['threshold'] == 4) {
-			$threshold = Logger::DEBUG;
-		} elseif($this->config['threshold'] == 3) {
-			$threshold = Logger::DEBUG;
-		} elseif($this->config['threshold'] == 2) {
-			$threshold = Logger::INFO;
-		} else {
-			$threshold = Logger::ERROR;
-		}
+		foreach(array_reverse($cimp_config['priority']) as $log_def) {
+			if(is_array($log_def)) {
+				$keys = array_keys($log_def);
+				$handler = $keys[0]; // TODO: either polyfill this or refactor when PHP 7.2 goes out of support, since 7.3 has an array_key_first
 
-		// decide which handler(s) to use
-  	foreach ($this->config['handlers'] as $value)
-		{
-			switch ($value)
-			{
-				case 'file':
-					$handler = new RotatingFileHandler($this->config['file_logfile']);
-					$formatter = new LineFormatter(null, null, $this->config['file_multiline']);
-					$handler->setFormatter($formatter);
-					break;
+				$confblock = $log_def[$handler];
 
-				case 'ci_file':
-					$handler = new RotatingFileHandler($this->config['ci_file_logfile']);
-					$formatter = new LineFormatter("%level_name% - %datetime% --> %message% %extra%\n", null, $this->config['ci_file_multiline']);
-					$handler->setFormatter($formatter);
-					break;
+				// below is broken up for readability/mindfulness
 
-				case 'new_relic':
-					$handler = new NewRelicHandler(Logger::ERROR, true, $this->config['new_relic_app_name']);
-					break;
-
-				case 'hipchat':
-					$handler = new HipChatHandler(
-						$this->config['hipchat_app_token'],
-						$this->config['hipchat_app_room_id'],
-						$this->config['hipchat_app_notification_name'],
-						$this->config['hipchat_app_notify'],
-						$this->config['hipchat_app_loglevel']
-					);
-					break;
-
-				case 'stderr':
-					$handler = new StreamHandler('php://stderr');
-					break;
-
-				case 'papertrail':
-					$handler = new SyslogUdpHandler($this->config['papertrail_host'], $this->config['papertrail_port']);
-					$formatter = new LineFormatter("%channel%.%level_name%: %message% %extra%", null, $this->config['papertrail_multiline']);
-					$handler->setFormatter($formatter);
-					break;
-
-				case 'gelf':
-					$transport = new UdpTransport($this->config['gelf_host'], $this->config['gelf_port']);					
-					$publisher = new Publisher($transport);					
-					$formatter = new GelfMessageFormatter();
-					$handler = new GelfHandler($publisher);					
-					$handler->setFormatter($formatter);					
-					break;
-
-				case 'loggly':	
-					$loggly_config = $this->config['ci_monolog']['loggly'];
-
-					$handler = new LogglyHandler($loggly_config['token'] . '/tag/monolog', $threshold);
-					$formatter = new LogglyFormatter();
-					break;
-
-				case 'syslogudp': 
-					$syslogudp_config = $this->config['ci_monolog']['syslogudp'];
-
-					$handler = new SyslogUdpHandler($syslogudp_config['host'], is_int($syslogudp_config['port']) ? $syslogudp_config['port'] : 514, LOG_USER, $threshold, $syslogudp_config['bubble'] === true, $syslogudp_config['ident']);
-					break;
-
-				case 'phpconsole':
-					if(ENVIRONMENT !== 'development' && ENVIRONMENT !== 'testing') {
-						trigger_error('CI Monolog: Environment is ' . ENVIRONMENT . ', not activating PHP Console error logging.', E_USER_WARNING);
-					} else {
-						$handler = new PHPConsoleHandler();
+				// looking for the specified one, and checking to see if it's enabled
+				if(array_key_exists($confblock, $cimp_config['handlers'][$handler])) {
+					if($cimp_config['handlers'][$handler][$confblock]['enabled']) {
+						$this->addLogHandler($handler, $cimp_config['handlers'][$handler][$confblock]);
+						$handlersAdded++;
+						break;
 					}
-					break;
+				} elseif(array_key_exists('default', $cimp_config['handlers'][$handler])) {
+					// didn't find it so trying default now
+					if ($cimp_config['handlers'][$handler]['default']['enabled']) {
+						$this->addLogHandler($handler, $cimp_config['handlers'][$handler]['default']);
+						$handlersAdded++;
+						break;
+					}
+				}
 
-				default:
-					exit('log handler not supported: ' . $value . "\n");
+				// didn't get either so falling through the bottom
+			} elseif(gettype($log_def) == 'string') {
+				if(array_key_exists($log_def, $cimp_config['handlers'])) {
+					// look for a "default" - if there's not one, then do nothing
+					foreach($cimp_config['handlers'][$log_def] as $cbname => $confblock) {
+						if($cbname == 'default' && $confblock['enabled']) {
+							$this->addLogHandler($log_def, $confblock);
+							$handlersAdded++;
+							break;
+						}
+					}
+				}
+			} else {
+				$failsafe->log(Logger::ERROR, 'Tried to configure a logger and did not know what was passed: ' . print_r($log_def, true));
 			}
+		}
 
-			$this->log->pushHandler($handler);
+		if($handlersAdded == 0) {
+			$failsafe->log(Logger::ERROR, 'Couldn\'t set up a logger based on configured priority, so defaulting to the failsafe one.');
+			$this->log = $failsafe;
+			return;
 		}
 
 		$this->write_log('DEBUG', 'Monolog replacement logger initialized');
 	}
 
+	/**
+	 * Adds a log handler to the instance Monolog object. Any added after the constructor does its thing will take
+	 * priority over the other logging methods, as Monolog uses a stack for that.
+	 *
+	 * If you'd like to add more handlers to the supported ones, here's where you'd do that.
+	 *
+	 * If the confblock has "enabled" set to false, it will just skip it.
+	 *
+	 * @param string $handler - The handler to configure
+	 * @param array $confblock - Configuration settings for the handler
+	 * @return bool
+	 */
+
+	public function addLogHandler($handler, $confblock) {
+		if(!$confblock['enabled']) {
+			return true;
+		}
+
+		switch($handler) {
+			default:
+				break;
+		}
+
+		return true;
+	}
 
 	/**
 	 * Write to defined logger. Is called from CodeIgniters native log_message()
@@ -228,6 +243,16 @@ class CIMonolog
 					break;
 			}
 		}
+		return true;
+	}
+
+	private function array_keys_exist($keys, $array) {
+		foreach($keys as $milton) {
+			if(!array_key_exists($milton, $array)) {
+				return false;
+			}
+		}
+
 		return true;
 	}
 
