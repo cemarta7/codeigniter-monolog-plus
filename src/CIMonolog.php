@@ -241,8 +241,8 @@ class CIMonolog
 			}
 		}
 
-		if ($this->_levels[$level] <= $this->config['threshold'])
-		{
+//		if ($this->_levels[$level] <= $this->config['threshold'])
+//		{
 			switch ($level)
 			{
 				case 'ERROR':
@@ -258,7 +258,7 @@ class CIMonolog
 					$this->log->info($msg);
 					break;
 			}
-		}
+//		}
 		return true;
 	}
 
