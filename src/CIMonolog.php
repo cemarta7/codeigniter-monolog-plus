@@ -60,7 +60,10 @@ class CIMonolog
 		// If the preflight checks don't pass, you'll get the failsafe handler - otherwise we'll spin up a new Monolog instance and jettison this one
 
 		$failsafe = new Logger('CIMonologFailsafe');
-		$failsafe->pushHandler(new \Monolog\Handler\StreamHandler(APPPATH . '/logs/log-failsafe.php'), Logger::DEBUG);
+
+		$fsLogLevel = defined('CIMONOLOGDEBUG') ? Logger::DEBUG : Logger::INFO;
+
+		$failsafe->pushHandler(new \Monolog\Handler\StreamHandler(APPPATH . '/logs/log-failsafe.php'), $fsLogLevel);
 
 		// Step 1: grab configuration and do a few preflight checks
 
@@ -185,7 +188,7 @@ class CIMonolog
 	public function addLogHandler($handler, $confblock, &$failsafe = false) {
 		if(!$confblock['enabled']) {
 		    if($failsafe !== false) {
-		        $failsafe->log(Logger::INFO, 'addLogHandler: handler for ' . $handler . ' is set to false, skipping');
+		        $failsafe->log(Logger::DEBUG, 'addLogHandler: handler for ' . $handler . ' is set to false, skipping');
             }
 
 			return true;
@@ -194,7 +197,7 @@ class CIMonolog
 		$errHnd = $formatter = false;
 
         if($failsafe !== false) {
-            $failsafe->log(Logger::INFO, 'addLogHandler: adding handler for ' . $handler . ': ' . print_r($confblock, true));
+            $failsafe->log(Logger::DEBUG, 'addLogHandler: adding handler for ' . $handler . ': ' . print_r($confblock, true));
         }
 
         switch($handler) {
@@ -203,7 +206,7 @@ class CIMonolog
                 $formatter = new \Monolog\Formatter\LineFormatter("%level_name% - %datetime% --> %message% %extra%\n", null, $confblock['multiline'] ? true : false);
                 $errHnd->setFormatter($formatter);
                 if($failsafe !== false) {
-                    $failsafe->log(Logger::INFO, 'addLogHandler: log handler for CI_Log set up');
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for CI_Log set up');
                 }
 
                 break;
@@ -211,13 +214,13 @@ class CIMonolog
             case 'syslogudp':
                 $errHnd = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $confblock['threshold'], $confblock['bubble'] === true, $confblock['ident']);
                 if($failsafe !== false) {
-                    $failsafe->log(Logger::INFO, 'addLogHandler: log handler for SyslogUDP set up');
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for SyslogUDP set up');
                 }
                 break;
 
             default:
                 if($failsafe !== false) {
-                    $failsafe->log(Logger::INFO, 'addLogHandler: handler \'' . $handler . '\' not recognized');
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: handler \'' . $handler . '\' not recognized');
                 }
 
                 break;
@@ -225,7 +228,7 @@ class CIMonolog
 
 		if($errHnd !== false) {
             if($failsafe !== false) {
-                $failsafe->log(Logger::INFO, 'addLogHandler: handler for ' . $handler . ' actually added');
+                $failsafe->log(Logger::DEBUG, 'addLogHandler: handler for ' . $handler . ' actually added');
             }
 
             $this->log->pushHandler($errHnd);
