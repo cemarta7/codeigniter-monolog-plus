@@ -144,17 +144,16 @@ class CIMonolog
                 // throw it into the addLogHandler method - it checks for enabled on its own anyway
 
                 $this->addLogHandler($handler, $cimp_config['handlers'][$handler][$cbname], $failsafe);
+                $handlersAdded++;
 			} elseif(gettype($log_def) == 'string') {
-				if(array_key_exists($log_def, $cimp_config['handlers'])) {
-					// look for a "default" - if there's not one, then do nothing
-					foreach($cimp_config['handlers'][$log_def] as $cbname => $confblock) {
-						if($cbname == 'default' && $confblock['enabled']) {
-							$this->addLogHandler($log_def, $confblock, $failsafe);
-							$handlersAdded++;
-							break;
-						}
-					}
-				}
+			    $failsafe->log(Logger::DEBUG, 'processing priority for default for this string: ' . $log_def);
+
+				if(array_key_exists($log_def, $cimp_config['handlers']) && array_key_exists('default', $cimp_config['handlers'][$log_def])) {
+                    $this->addLogHandler($log_def, $cimp_config['handlers'][$log_def]['default'], $failsafe);
+                    $handlersAdded++;
+				} else {
+				    $failsafe->log(Logger::DEBUG, 'string handler didn\'t have a default, skipped');
+                }
 			} else {
 				$failsafe->log(Logger::ERROR, 'Tried to configure a logger and did not know what was passed: ' . print_r($log_def, true));
 			}
@@ -192,7 +191,7 @@ class CIMonolog
 			return true;
 		}
 
-		$handler = $formatter = false;
+		$errHnd = $formatter = false;
 
         if($failsafe !== false) {
             $failsafe->log(Logger::INFO, 'addLogHandler: adding handler for ' . $handler . ': ' . print_r($confblock, true));
@@ -200,25 +199,25 @@ class CIMonolog
 
         switch($handler) {
             case 'ci_log':
-                $handler = new \Monolog\Handler\RotatingFileHandler($confblock['logfile']);
+                $errHnd = new \Monolog\Handler\RotatingFileHandler($confblock['logfile']);
                 $formatter = new \Monolog\Formatter\LineFormatter("%level_name% - %datetime% --> %message% %extra%\n", null, $confblock['multiline'] ? true : false);
-                $handler->setFormatter($formatter);
+                $errHnd->setFormatter($formatter);
                 break;
 
             case 'syslogudp':
-                $handler = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $confblock['threshold'], $confblock['bubble'] === true, $confblock['ident']);
+                $errHnd = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $confblock['threshold'], $confblock['bubble'] === true, $confblock['ident']);
                 break;
 
             default:
 				break;
 		}
 
-		if($handler !== false) {
+		if($errHnd !== false) {
             if($failsafe !== false) {
                 $failsafe->log(Logger::INFO, 'addLogHandler: handler for ' . $handler . ' actually added');
             }
 
-            $this->log->pushHandler($handler);
+            $this->log->pushHandler($errHnd);
         }
 
 		return true;
