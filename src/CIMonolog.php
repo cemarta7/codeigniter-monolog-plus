@@ -323,11 +323,11 @@ class CIMonolog
         }
 
 		if($errHnd !== false) {
-            if($failsafe !== false) {
-                $failsafe->log(Logger::DEBUG, 'addLogHandler: handler for ' . $handler . ' actually added');
-            }
-
             $this->log->pushHandler($errHnd, $threshold);
+
+            if($failsafe !== false) {
+                $failsafe->log(Logger::DEBUG, 'addLogHandler: handler for ' . $handler . ' at threshold ' . $threshold . ' actually added');
+            }
         }
 
 		return true;
