@@ -198,18 +198,29 @@ class CIMonolog
         }
 
         switch($handler) {
-            case 'ci_log':
+            case 'ci_file':
                 $errHnd = new \Monolog\Handler\RotatingFileHandler($confblock['logfile']);
                 $formatter = new \Monolog\Formatter\LineFormatter("%level_name% - %datetime% --> %message% %extra%\n", null, $confblock['multiline'] ? true : false);
                 $errHnd->setFormatter($formatter);
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::INFO, 'addLogHandler: log handler for CI_Log set up');
+                }
+
                 break;
 
             case 'syslogudp':
                 $errHnd = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $confblock['threshold'], $confblock['bubble'] === true, $confblock['ident']);
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::INFO, 'addLogHandler: log handler for SyslogUDP set up');
+                }
                 break;
 
             default:
-				break;
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::INFO, 'addLogHandler: handler \'' . $handler . '\' not recognized');
+                }
+
+                break;
 		}
 
 		if($errHnd !== false) {
