@@ -95,8 +95,85 @@ $cimp_config = array(
 				// Whether messages can bubble up the stack or not (see docs for your particular syslogd server)
 				'bubble' => true
 			)
-		)
-	),
+		),
+        // Generic File Handler: very similar to CI File, but doesn't format log entries in a CodeIgniter-sort of way
+        'file' => array(
+            'default' => array(
+                'enabled' => false,
+                'threshold' => 1,
+                // Enable multi-line logging (with newlines)
+                'multiline' => true,
+                // Log file path - date for log file rolling will be inserted before the extension (default .php).
+                // If you change the extension you should also ensure the web server won't serve logs generated.
+                'logfile' => APPPATH . '/logs/log.php'
+            )
+        ),
+	    // New Relic handler: logs to a New Relic account
+	    'new_relic' => array(
+	        'default' => array(
+	            'enabled' => false,
+                'threshold' => 1,
+                // App name for your account
+                'app_name' => 'APP NAME - ' . ENVIRONMENT
+            )
+        ),
+	    // HipChat Handler: sends messages to HipChat - these will be log messages, not alerts and such
+        'hipchat' => array(
+            'default' => array(
+                'enabled' => false,
+                'threshold' => 1,
+                // Your API token
+                'token' => '',
+                // Room that should be alerted (ID or name)
+                'room_id' => '',
+                // "From" field name
+                'notification_name' => '',
+                // Turn on notifications
+                'notify' => false
+            )
+        ),
+	    // PaperTrail Handler: logs to PaperTrail (uses Syslog UDP internally)
+        'papertrail' => array(
+            'default' => array(
+                'enabled' => false,
+                'threshold' => 1,
+                // Host to connect to
+                'host' => 'localhost',
+                // Port to use
+                'port' => 514,
+                // Enable multiline messages
+                'multiline' => true
+            )
+        ),
+	    // Gelf Handler: send logs to a Gelf system
+        'gelf' => array(
+            'default' => array(
+                'enabled' => false,
+                'threshold' => 1,
+                // Host to connect to
+                'host' => '',
+                // Port to use
+                'port' => ''
+            )
+        ),
+	    // Loggly handler: sends logs to a Loggly account - this has its own formatter that cannot be changed
+        'loggly' => array(
+            'default' => array(
+                'enabled' => false,
+                'threshold' => 1,
+                // Your account token
+                'token' => ''
+            )
+        ),
+	    // PHP Console Handler: sends logs back to the browser via PHP Console - this disables itself in production
+        // This really doesn't have any sort of configuration outside of the default stuff.
+        'phpconsole' => array(
+            'default' => array(
+                'enabled' => false,
+                'threshold' => 1
+            )
+        )
+    ),
 
 	// PRIORITY CONFIG: sets the order that logs are written. This works in conjunction with the log threshold you
 	// specify when logging an error - if you have, for instance, New Relic configured before CI Log but New Relic only

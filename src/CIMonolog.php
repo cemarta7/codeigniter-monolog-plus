@@ -218,6 +218,81 @@ class CIMonolog
                 }
                 break;
 
+            case 'file':
+                $errHnd = new \Monolog\Handler\RotatingFileHandler($confblock['logfile']);
+                $formatter = new  \Monolog\Formatter\LineFormatter(null, null, $confblock['multiline']);
+                $errHnd->setFormatter($formatter);
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for File set up');
+                }
+                break;
+
+            case 'new_relic':
+                $errHnd = new \Monolog\Handler\NewRelicHandler(Logger::ERROR, true, $confblock['app_name']);
+                break;
+
+            case 'hipchat':
+                $errHnd = new \Monolog\Handler\HipChatHandler(
+                    $confblock['app_token'],
+                    $confblock['app_room_id'],
+                    $confblock['app_notification_name'],
+                    $confblock['app_notify'],
+                    $confblock['app_loglevel']
+                );
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for New Relic set up');
+                }
+                break;
+
+            case 'stderr':
+                $errHnd = new \Monolog\Handler\StreamHandler('php://stderr');
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for stderr set up');
+                }
+                break;
+
+            case 'papertrail':
+                $errHnd = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], $confblock['port']);
+                $formatter = new  \Monolog\Formatter\LineFormatter("%channel%.%level_name%: %message% %extra%", null, $confblock['multiline']);
+                $errHnd->setFormatter($formatter);
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for Papertrail set up');
+                }
+                break;
+
+            case 'gelf':
+                $transport = new \Gelf\Transport\UdpTransport($confblock['host'], $confblock['port']);
+                $publisher = new \Gelf\Publisher($transport);
+                $formatter = new  \Monolog\Formatter\GelfMessageFormatter();
+                $errHnd = new \Monolog\Handler\GelfHandler($publisher);
+                $errHnd->setFormatter($formatter);
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for Gelf set up');
+                }
+                break;
+
+            case 'loggly':
+                $errHnd = new \Monolog\Handler\LogglyHandler($confblock['token'] . '/tag/monolog', $confblock['threshold']);
+                $formatter = new  \Monolog\Formatter\LogglyFormatter();
+                $errHnd->setFormatter($formatter);
+                if($failsafe !== false) {
+                    $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for Loggly set up');
+                }
+                break;
+
+            case 'phpconsole':
+                if(ENVIRONMENT !== 'development' && ENVIRONMENT !== 'testing') {
+                    if($failsafe !== false) {
+                        $failsafe->log(Loggly::ERROR, 'CI Monolog: Environment is ' . ENVIRONMENT . ', not activating PHP Console error logging.');
+                    }
+                } else {
+                    $errHnd = new \Monolog\Handler\PHPConsoleHandler();
+                    if($failsafe !== false) {
+                        $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for PHP Console set up');
+                    }
+                }
+                break;
+
             default:
                 if($failsafe !== false) {
                     $failsafe->log(Logger::DEBUG, 'addLogHandler: handler \'' . $handler . '\' not recognized');
@@ -226,12 +301,33 @@ class CIMonolog
                 break;
 		}
 
+        // determine threshold
+        // note that Monolog supports more than this; they're just not configured right now.
+        // the ordering on this is weird too - debug and all are essentially the same.
+
+        switch($confblock['threshold']) {
+            case 0:
+                return; // 0 = off
+
+            case 1:
+                $threshold = Logger::ERROR;
+                break;
+
+            case 3:
+                $threshold = Logger::INFO;
+                break;
+
+            default:
+                $threshold = Logger::DEBUG;
+                break;
+        }
+
 		if($errHnd !== false) {
             if($failsafe !== false) {
                 $failsafe->log(Logger::DEBUG, 'addLogHandler: handler for ' . $handler . ' actually added');
             }
 
-            $this->log->pushHandler($errHnd);
+            $this->log->pushHandler($errHnd, $threshold);
         }
 
 		return true;
@@ -255,7 +351,7 @@ class CIMonolog
 			$level = 'ALL';
 		}
 
-		// filter out anything in $this->config['exclusion_list']
+		// filter out anything in $this->>config['exclusion_list']
 		if (!empty($this->config['exclusion_list']))
 		{
 			foreach ($this->config['exclusion_list'] as $findme)
