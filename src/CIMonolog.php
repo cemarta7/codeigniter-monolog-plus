@@ -128,14 +128,14 @@ class CIMonolog
 				// looking for the specified one, and checking to see if it's enabled
 				if(array_key_exists($confblock, $cimp_config['handlers'][$handler])) {
 					if($cimp_config['handlers'][$handler][$confblock]['enabled']) {
-						$this->addLogHandler($handler, $cimp_config['handlers'][$handler][$confblock], &$failsafe);
+						$this->addLogHandler($handler, $cimp_config['handlers'][$handler][$confblock], $failsafe);
 						$handlersAdded++;
 						break;
 					}
 				} elseif(array_key_exists('default', $cimp_config['handlers'][$handler])) {
 					// didn't find it so trying default now
 					if ($cimp_config['handlers'][$handler]['default']['enabled']) {
-						$this->addLogHandler($handler, $cimp_config['handlers'][$handler]['default'], &$failsafe);
+						$this->addLogHandler($handler, $cimp_config['handlers'][$handler]['default'], $failsafe);
 						$handlersAdded++;
 						break;
 					}
@@ -147,7 +147,7 @@ class CIMonolog
 					// look for a "default" - if there's not one, then do nothing
 					foreach($cimp_config['handlers'][$log_def] as $cbname => $confblock) {
 						if($cbname == 'default' && $confblock['enabled']) {
-							$this->addLogHandler($log_def, $confblock, &$failsafe);
+							$this->addLogHandler($log_def, $confblock, $failsafe);
 							$handlersAdded++;
 							break;
 						}
@@ -180,7 +180,7 @@ class CIMonolog
 	 * @return bool
 	 */
 
-	public function addLogHandler($handler, $confblock, $failsafe = false) {
+	public function addLogHandler($handler, $confblock, &$failsafe = false) {
 		if(!$confblock['enabled']) {
 		    if($failsafe !== false) {
 		        $failsafe->log(Logger::INFO, 'addLogHandler: handler for ' . $handler . ' is set to false, skipping');
