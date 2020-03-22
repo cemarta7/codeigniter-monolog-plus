@@ -253,8 +253,7 @@ class CIMonolog
 					$this->log->debug($msg);
 					break;
 
-				case 'ALL':
-				case 'INFO':
+                default:
 					$this->log->info($msg);
 					break;
 			}
