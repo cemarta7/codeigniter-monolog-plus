@@ -120,28 +120,30 @@ class CIMonolog
 			if(is_array($log_def)) {
 				$keys = array_keys($log_def);
 				$handler = $keys[0]; // TODO: either polyfill this or refactor when PHP 7.2 goes out of support, since 7.3 has an array_key_first
+				$cbname = $log_def[$handler];
 
-				$confblock = $log_def[$handler];
+				$failsafe->log(Logger::INFO, "processing priority for an assoc: handler is {$handler} and confblock name is {$cbname}");
 
-				// below is broken up for readability/mindfulness
+				if(!array_key_exists($handler, $cimp_config['handlers'])) {
+				    $failsafe->log(Logger::DEBUG, 'handler not found so skipping entirely');
+				    break;
+                }
 
-				// looking for the specified one, and checking to see if it's enabled
-				if(array_key_exists($confblock, $cimp_config['handlers'][$handler])) {
-					if($cimp_config['handlers'][$handler][$confblock]['enabled']) {
-						$this->addLogHandler($handler, $cimp_config['handlers'][$handler][$confblock], $failsafe);
-						$handlersAdded++;
-						break;
-					}
-				} elseif(array_key_exists('default', $cimp_config['handlers'][$handler])) {
-					// didn't find it so trying default now
-					if ($cimp_config['handlers'][$handler]['default']['enabled']) {
-						$this->addLogHandler($handler, $cimp_config['handlers'][$handler]['default'], $failsafe);
-						$handlersAdded++;
-						break;
-					}
-				}
+				if(!array_key_exists($cbname, $cimp_config['handlers'][$handler])) {
+				    $failsafe->log(Logger::DEBUG, 'confblock name not found, defaulting to \'default\'');
+				    $cbname = 'default';
+                }
 
-				// didn't get either so falling through the bottom
+				// rerun the above to make sure there is one
+
+                if(!array_key_exists($cbname, $cimp_config['handlers'][$handler])) {
+                    $failsafe->log(Logger::DEBUG, 'confblock name really not found, skipping');
+                    break;
+                }
+
+                // throw it into the addLogHandler method - it checks for enabled on its own anyway
+
+                $this->addLogHandler($handler, $cimp_config['handlers'][$handler][$cbname], $failsafe);
 			} elseif(gettype($log_def) == 'string') {
 				if(array_key_exists($log_def, $cimp_config['handlers'])) {
 					// look for a "default" - if there's not one, then do nothing
@@ -177,6 +179,7 @@ class CIMonolog
 	 *
 	 * @param string $handler - The handler to configure
 	 * @param array $confblock - Configuration settings for the handler
+     * @param object|bool $failsafe - The failsafe log handler, or false if one's not been set up. This is passed by ref.
 	 * @return bool
 	 */
 
