@@ -60,7 +60,7 @@ class CIMonolog
 		// If the preflight checks don't pass, you'll get the failsafe handler - otherwise we'll spin up a new Monolog instance and jettison this one
 
 		$failsafe = new Logger('CIMonologFailsafe');
-		$failsafe->pushHandler(new Monolog\Handler\StreamHandler(APPPATH . '/logs/log-failsafe.php'), Logger::DEBUG);
+		$failsafe->pushHandler(new \Monolog\Handler\StreamHandler(APPPATH . '/logs/log-failsafe.php'), Logger::DEBUG);
 
 		// Step 1: grab configuration and do a few preflight checks
 
@@ -111,7 +111,7 @@ class CIMonolog
 		if ($this->config['introspection_processor'])
 		{
 			// add controller and line number info to each log message
-			$this->log->pushProcessor(new Monolog\Processor\IntrospectionProcessor());
+			$this->log->pushProcessor(new \Monolog\Processor\IntrospectionProcessor());
 		}
 
 		$handlersAdded = 0;
@@ -189,13 +189,13 @@ class CIMonolog
 
 		switch($handler) {
             case 'ci_log':
-                $handler = new RotatingFileHandler($confblock['logfile']);
-                $formatter = new LineFormatter("%level_name% - %datetime% --> %message% %extra%\n", null, $confblock['multiline'] ? true : false);
+                $handler = new \Monolog\Handler\RotatingFileHandler($confblock['logfile']);
+                $formatter = new \Monolog\Formatter\LineFormatter("%level_name% - %datetime% --> %message% %extra%\n", null, $confblock['multiline'] ? true : false);
                 $handler->setFormatter($formatter);
                 break;
 
             case 'syslogudp':
-                $handler = new SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $confblock['threshold'], $confblock['bubble'] === true, $confblock['ident']);
+                $handler = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $confblock['threshold'], $confblock['bubble'] === true, $confblock['ident']);
                 break;
 
             default:
