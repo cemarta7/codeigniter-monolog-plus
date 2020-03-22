@@ -166,7 +166,7 @@ $cimp_config = array(
             )
         ),
 	    // PHP Console Handler: sends logs back to the browser via PHP Console - this disables itself in production
-        // This really doesn't have any sort of configuration outside of the default stuff.
+        // FIXME: this ignores all of the configuration options for this handler
         'phpconsole' => array(
             'default' => array(
                 'enabled' => false,

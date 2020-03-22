@@ -200,9 +200,30 @@ class CIMonolog
             $failsafe->log(Logger::DEBUG, 'addLogHandler: adding handler for ' . $handler . ': ' . print_r($confblock, true));
         }
 
+        // determine threshold
+        // note that Monolog supports more than this; they're just not configured right now.
+        // the ordering on this is weird too - debug and all are essentially the same.
+
+        switch($confblock['threshold']) {
+            case 0:
+                return; // 0 = off
+
+            case 1:
+                $threshold = Logger::ERROR;
+                break;
+
+            case 3:
+                $threshold = Logger::INFO;
+                break;
+
+            default:
+                $threshold = Logger::DEBUG;
+                break;
+        }
+
         switch($handler) {
             case 'ci_file':
-                $errHnd = new \Monolog\Handler\RotatingFileHandler($confblock['logfile']);
+                $errHnd = new \Monolog\Handler\RotatingFileHandler($confblock['logfile'], 0, $threshold);
                 $formatter = new \Monolog\Formatter\LineFormatter("%level_name% - %datetime% --> %message% %extra%\n", null, $confblock['multiline'] ? true : false);
                 $errHnd->setFormatter($formatter);
                 if($failsafe !== false) {
@@ -212,14 +233,14 @@ class CIMonolog
                 break;
 
             case 'syslogudp':
-                $errHnd = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $confblock['threshold'], $confblock['bubble'] === true, $confblock['ident']);
+                $errHnd = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $threshold, $confblock['bubble'] === true, $confblock['ident']);
                 if($failsafe !== false) {
                     $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for SyslogUDP set up');
                 }
                 break;
 
             case 'file':
-                $errHnd = new \Monolog\Handler\RotatingFileHandler($confblock['logfile']);
+                $errHnd = new \Monolog\Handler\RotatingFileHandler($confblock['logfile'], 0, $threshold);
                 $formatter = new  \Monolog\Formatter\LineFormatter(null, null, $confblock['multiline']);
                 $errHnd->setFormatter($formatter);
                 if($failsafe !== false) {
@@ -245,14 +266,14 @@ class CIMonolog
                 break;
 
             case 'stderr':
-                $errHnd = new \Monolog\Handler\StreamHandler('php://stderr');
+                $errHnd = new \Monolog\Handler\StreamHandler('php://stderr', $threshold);
                 if($failsafe !== false) {
                     $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for stderr set up');
                 }
                 break;
 
             case 'papertrail':
-                $errHnd = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], $confblock['port']);
+                $errHnd = new \Monolog\Handler\SyslogUdpHandler($confblock['host'], $confblock['port'], LOG_USER, $threshold);
                 $formatter = new  \Monolog\Formatter\LineFormatter("%channel%.%level_name%: %message% %extra%", null, $confblock['multiline']);
                 $errHnd->setFormatter($formatter);
                 if($failsafe !== false) {
@@ -264,7 +285,7 @@ class CIMonolog
                 $transport = new \Gelf\Transport\UdpTransport($confblock['host'], $confblock['port']);
                 $publisher = new \Gelf\Publisher($transport);
                 $formatter = new  \Monolog\Formatter\GelfMessageFormatter();
-                $errHnd = new \Monolog\Handler\GelfHandler($publisher);
+                $errHnd = new \Monolog\Handler\GelfHandler($publisher, $threshold);
                 $errHnd->setFormatter($formatter);
                 if($failsafe !== false) {
                     $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for Gelf set up');
@@ -272,7 +293,7 @@ class CIMonolog
                 break;
 
             case 'loggly':
-                $errHnd = new \Monolog\Handler\LogglyHandler($confblock['token'] . '/tag/monolog', $confblock['threshold']);
+                $errHnd = new \Monolog\Handler\LogglyHandler($confblock['token'] . '/tag/monolog', $threshold);
                 $formatter = new  \Monolog\Formatter\LogglyFormatter();
                 $errHnd->setFormatter($formatter);
                 if($failsafe !== false) {
@@ -286,7 +307,7 @@ class CIMonolog
                         $failsafe->log(Loggly::ERROR, 'CI Monolog: Environment is ' . ENVIRONMENT . ', not activating PHP Console error logging.');
                     }
                 } else {
-                    $errHnd = new \Monolog\Handler\PHPConsoleHandler();
+                    $errHnd = new \Monolog\Handler\PHPConsoleHandler(array(), null, $threshold);
                     if($failsafe !== false) {
                         $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for PHP Console set up');
                     }
@@ -301,29 +322,8 @@ class CIMonolog
                 break;
 		}
 
-        // determine threshold
-        // note that Monolog supports more than this; they're just not configured right now.
-        // the ordering on this is weird too - debug and all are essentially the same.
-
-        switch($confblock['threshold']) {
-            case 0:
-                return; // 0 = off
-
-            case 1:
-                $threshold = Logger::ERROR;
-                break;
-
-            case 3:
-                $threshold = Logger::INFO;
-                break;
-
-            default:
-                $threshold = Logger::DEBUG;
-                break;
-        }
-
 		if($errHnd !== false) {
-            $this->log->pushHandler($errHnd, $threshold);
+            $this->log->pushHandler($errHnd);
 
             if($failsafe !== false) {
                 $failsafe->log(Logger::DEBUG, 'addLogHandler: handler for ' . $handler . ' at threshold ' . $threshold . ' actually added');
