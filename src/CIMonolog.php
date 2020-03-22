@@ -99,7 +99,7 @@ class CIMonolog
 		}
 
 		// make $config from config/monolog.php accessible to $this->write_log()
-		$this->config = $config;
+		$this->config = $cimp_config;
 
 		// Step 2: spin up the Monolog instance and get going
 
@@ -185,10 +185,26 @@ class CIMonolog
 			return true;
 		}
 
+		$handler = $formatter = false;
+
 		switch($handler) {
-			default:
+            case 'ci_log':
+                $handler = new RotatingFileHandler($confblock['logfile']);
+                $formatter = new LineFormatter("%level_name% - %datetime% --> %message% %extra%\n", null, $confblock['multiline'] ? true : false);
+                $handler->setFormatter($formatter);
+                break;
+
+            case 'syslogudp':
+                $handler = new SyslogUdpHandler($confblock['host'], is_int($confblock['port']) ? $confblock['port'] : 514, LOG_USER, $confblock['threshold'], $confblock['bubble'] === true, $confblock['ident']);
+                break;
+
+            default:
 				break;
 		}
+
+		if($handler !== false) {
+		    $this->log->pushHandler($handler);
+        }
 
 		return true;
 	}
