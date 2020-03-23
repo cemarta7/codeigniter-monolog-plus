@@ -13,21 +13,6 @@ namespace CIMonologPlus;
 
 use Monolog\Logger;
 use Monolog\ErrorHandler;
-use Monolog\Formatter\LineFormatter;
-use Monolog\Formatter\LogglyFormatter;
-use Monolog\Handler\LogglyHandler;
-use Monolog\Handler\RotatingFileHandler;
-use Monolog\Handler\NewRelicHandler;
-use Monolog\Handler\HipChatHandler;
-use Monolog\Handler\StreamHandler;
-use Monolog\Handler\SyslogUdpHandler;
-use Monolog\Handler\PHPConsoleHandler;
-use Monolog\Processor\IntrospectionProcessor;
-
-// Make sure to install graylog2/gelf-php - composer require graylog2/gelf-php
-use Gelf\Transport\UdpTransport;
-use Gelf\Publisher;
-
 
 /**
  *  replaces CI's Logger class, use Monolog instead

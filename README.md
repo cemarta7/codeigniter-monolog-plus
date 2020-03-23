@@ -30,7 +30,7 @@ This package isn't in Packagist (yet) so installation must be done manually for 
 
 ## Usage
 
-Use log_message() as normal in CodeIgniter to log error, debug and info messages. Log files are stored in the application/logs folder, unless you've changed the path.
+Use log_message() as normal in CodeIgniter to log error, debug and info messages. File loggers log to the files you've specified, and everything else logs as you've set it in the configuration file.
 
 ## Log Levels
 
@@ -70,6 +70,8 @@ $config = array(
 );
 ```
 
+Note that simply having the handler in the config file is not necessarily enough to make the handler work - in most cases, you'll also need to make sure the packages are there for that given handler. (For example, if you want to use the Loggly handler, you'll need to install the Loggly package through composer.) See the Monolog documentation for details on what you'll need to install for the given handler you want to use. The exceptions here are the file-based ones and the stream/stderr one; those are part of the core Monolog package and are automatically installed.
+
 ### Global Options
 
 These go at the root of the array. 
@@ -78,10 +80,9 @@ These go at the root of the array.
 * `exclusion_list` - Array, strings to skip logging
 * `channel` - String, sets the channel name. This is just passed to the Monolog constructor; this library doesn't necessarily support different channels quite yet.
 
-
 ### Handler Options
 
-Each handler can have as many blocks as you require, but each one should have a default block. The library will look for a default block if it can't find a named one or if you specify the handler without a block name. The handlers themselves are:
+Each handler can have as many blocks as you require, but each one that's actually being used should have a default block. The library will look for a default block if it can't find a named one or if you specify the handler without a block name. The handlers themselves are:
 
 * `file` - Basic file logger, with rotation.
 * `ci_file` - Mostly the same as `file`, but logs are written with a formatter tha makes them more "CodeIgniter"-y.
@@ -103,8 +104,61 @@ Outside of that, each handler has its own set of options.
 #### file / ci_file
 
 These two use the same Monolog handler, so they have the same options. 
-* `multiline` - boolean, allows for newlines in the log output
-* `logfile` - string, the location to log files to. The log handler will adjust the file name on its own to add dates.
+* `multiline` - Boolean, allows for newlines in the log output
+* `logfile` - The location to log files to. The log handler will adjust the file name on its own to add dates.
+
+#### syslogudp
+
+* `host` - The host to connect to
+* `port` - The port to connect to (default 514). As the name should indicate, this will connect via UDP.
+* `bubble` - Allow messages to bubble upwards (default to true). If this is set to false, logging will stop once it hits this handler. 
+* `ident` - The syslog identity for the app.
+
+#### new_relic
+
+* `app_name` - The application name to use.
+
+#### hipchat
+
+* `token` - Your HipChat API token.
+* `room_id` - The room to send messages to (ID or name).
+* `notification_name` - The identity to post messages as.
+* `notify` - Boolean, send notifications to clients when messages are sent.
+
+#### papertrail
+
+* `host` - The host to connect to.
+* `port` - The port to use.
+* `multiline` - Boolean, enables newlines in the output.
+
+#### gelf
+
+* `host` - The host to connect to.
+* `port` - The port to use.
+
+#### loggly
+
+* `token` - Your Loggly API token.
+
+#### phpconsole
+
+If you're using phpconsole, you do need to set up a block for the `enable` and `threshold` options, but at present this library does not expose any other options.
+
+### Priority
+
+Priority is simply a list of handlers. They're in FIFO order - first one in the list gets priority. Each entry is one of two things:
+* The name of the handler to use - 'ci_file', 'loggly', etc. This will use the default block in the configuration for the specified handler.
+* A key-value pair specifying the handler to use and what config block to use. Specify this as `array('handler' => 'block name')`. The code will pull the first key and use it for the handler name and the value for it for the conf block to use. If the block isn't found, it will try to use the default one. 
+
+If a suitable setup isn't found for the entry, it will just be skipped. It will also skip it if the block has enabled set to false. 
+
+### Debug Mode/Failsafe Logging
+
+The library has a debugging mode. This is especially useful if you're doing a lot with configuration settings or if you're adding in support for other handlers. To enable this, define "CIMONOLOGDEBUG" in your index.php file and set it to true.
+
+There is also a failsafe for log functions if there are issues with the config file. (This functionality is used for debug mode logging as well.) The failsafe log is just another Monolog instance that's configured to write to _application root_/application/logs/log-failsafe.php - if you're seeing that file in there, that likely means you have something not set up right in the config file and it's confused. 
+
+A few error modes will trigger the failsafe logging to be enabled (including debug mode) but it will not trigger if there's simply nothing configured to log to: if all the config blocks are set to disabled, or if they're empty, it will set up a Monolog instance without any actual handlers in it.
 
 ## Compatibility
 
