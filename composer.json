@@ -3,6 +3,15 @@
 	"description": "Provides a shim to use Monolog with Code Igniter.",
 	"license": "MIT",
 	"keywords": [ "codeigniter", "monolog", "log", "php" ],
+	"homepage": "https://github.com/jkachel/codeigniter-monolog-plus",
+	"authors": [
+		{
+			"name": "James Kachel",
+			"email": "james@jkachel.com",
+			"homepage": "https://jkachel.com",
+			"role": "Developer"
+		}
+	],
     "require": {
         "graylog2/gelf-php": "^1.5",
         "monolog/monolog": "^1.23"        
@@ -11,11 +20,6 @@
     	"psr-4": {
     		"CIMonologPlus\\": "src/"
     	}
-    },
-    "scripts": {
-    	"cimp-install": [
-    		"php installer.php"
-    	]
     }
 }
 
