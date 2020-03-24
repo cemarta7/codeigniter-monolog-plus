@@ -2,7 +2,7 @@
 
 This is a fork and a now mostly rewrite of [Codeigniter-Monolog-Plus](https://github.com/JoshHighland/codeigniter-monolog-plus) by @JoshHighland, which itself is based on [Codeigniter-Monolog](https://github.com/stevethomas/codeigniter-monolog) by @SteveThomas.
 
-CodeIgniter Monolog Plus brings the Monolog logging package into a CodeIgniter 3 project, replacing the built-in _CI_Log_ library and adding a bunch of configurability. Multiple loggers can be set up for various purposes, locations, and services, and individual thresholds can be set to have their own logging.
+CodeIgniter Monolog Plus brings the [Monolog](https://github.com/Seldaek/monolog) logging package into a CodeIgniter 3 project, replacing the built-in _CI_Log_ library and adding a bunch of configurability. Multiple loggers can be set up for various purposes, locations, and services, and individual thresholds can be set to have their own logging.
 
 This started as a simple fork to add Loggly, PHP Console, and SyslogUdp (bare) support and ended up being a bit of a rewrite to make things more useful. It also now more closely integrates in with Composer. 
 
@@ -17,7 +17,7 @@ This started as a simple fork to add Loggly, PHP Console, and SyslogUdp (bare) s
 
 ## Installation
 
-This package isn't in Packagist (yet) so installation must be done manually for now. 
+This package is now in Packagist so `composer require jkachel/codeigniter-monolog-plus` ought to be sufficient. If you'd rather add dev-master:  
  
 * Configure this repo in your project's composer.json. See https://getcomposer.org/doc/02-libraries.md#publishing-to-a-vcs - the second code block there has a "repositories" option that you'll need to add. 
 * Add the package. `composer require jkachel/codeigniter-monolog-plus:dev-master`
