@@ -34,6 +34,16 @@ class CIMonolog
 	// config placeholder
 	protected $config = array();
 
+	protected function resolveConfigFile($filename) {
+        // copied functionality from system/core/Common.php, as the whole CI infrastructure is not available yet
+
+        if (!defined('ENVIRONMENT') OR !file_exists(APPPATH . 'config/' . ENVIRONMENT . '/' . $filename)) {
+            return APPPATH . 'config/' . $filename;
+        }
+
+        return APPPATH . 'config/' . ENVIRONMENT . '/' . $filename;
+    }
+
 	/**
 	 * prepare logging environment with configuration variables
 	 */
@@ -48,19 +58,29 @@ class CIMonolog
 
 		$fsLogLevel = defined('CIMONOLOGDEBUG') ? Logger::DEBUG : Logger::INFO;
 
-		$failsafe->pushHandler(new \Monolog\Handler\StreamHandler(APPPATH . '/logs/log-failsafe.php'), $fsLogLevel);
+		// a change! 2020-16-6 jkachel: so guess what fails if the log folder isn't writable and you need the logs elsewhere anyway yep it's this
+        // so now we'll get the default log path out of the CI config and use that, with a fallback to the APPPATH one if it's not set
+
+        try {
+            require($this->resolveConfigFile('config.php'));
+        } catch(\Exception $e) {
+            trigger_error("CI Monolog Plus: Can't open the base config file. There is probably something wrong with your application's configuration.", E_USER_ERROR);
+        }
+
+        if(trim($config['log_path']) == '' || !file_exists($config['log_path'])) {
+            $failsafePath = APPPATH . '/logs/log-failsafe.php';
+        } else {
+            $failsafePath = $config['log_path'] . '/log-failsafe.php';
+        }
+
+		$failsafe->pushHandler(new \Monolog\Handler\StreamHandler($failsafePath), $fsLogLevel);
 
 		// Step 1: grab configuration and do a few preflight checks
 
-		// copied functionality from system/core/Common.php, as the whole CI infrastructure is not available yet
-		if (!defined('ENVIRONMENT') OR !file_exists($file_path = APPPATH . 'config/' . ENVIRONMENT . '/monolog.php'))
-		{
-		    $file_path = APPPATH . 'config/monolog.php';
-		}
-
 		// Fetch the config file
+        // note this has changed too; it now uses the config file resolver
 		try {
-			require($file_path);
+			require($this->resolveConfigFile('monolog.php'));
 		} catch(\Exception $e) {
 			$failsafe->log(Logger::ERROR, 'Configuration file doesn\'t exist! ' . $e->getMessage());
 		    $this->log = $failsafe;
