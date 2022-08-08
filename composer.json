@@ -14,7 +14,7 @@
 	],
     "require": {
         "graylog2/gelf-php": "^1.5",
-        "monolog/monolog": "^1.23"        
+        "monolog/monolog": "^2.8"        
     },
     "autoload": {
     	"psr-4": {
