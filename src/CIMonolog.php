@@ -15,6 +15,8 @@ use Monolog\Logger;
 use Monolog\ErrorHandler;
 use Monolog\Handler\SyslogUdpHandler;
 
+#[\AllowDynamicProperties]
+
 /**
  *  replaces CI's Logger class, use Monolog instead
  *
