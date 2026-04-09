@@ -26,16 +26,16 @@ use Monolog\Handler\SyslogUdpHandler;
 class CIMonolog
 {
     // CI log levels
-    protected $_levels = array(
+    protected $_levels = [
                 'OFF' => '0',
                 'ERROR' => '1',
                 'DEBUG' => '2',
                 'INFO' => '3',
                 'ALL' => '4'
-    );
+    ];
 
     // config placeholder
-    protected $config = array();
+    protected $config = [];
 
     protected function resolveConfigFile($filename)
     {
@@ -71,13 +71,13 @@ class CIMonolog
             trigger_error("CI Monolog Plus: Can't open the base config file. There is probably something wrong with your application's configuration.", E_USER_ERROR);
         }
 
-        if (trim($config['log_path']) == '' || !file_exists($config['log_path'])) {
+        if (trim((string) $config['log_path']) == '' || !file_exists($config['log_path'])) {
             $failsafePath = APPPATH . '/logs/log-failsafe.php';
         } else {
             $failsafePath = $config['log_path'] . '/log-failsafe.php';
         }
 
-        $failsafe->pushHandler(new \Monolog\Handler\StreamHandler($failsafePath), $fsLogLevel);
+        $failsafe->pushHandler(new \Monolog\Handler\StreamHandler($failsafePath));
 
         // Step 1: grab configuration and do a few preflight checks
 
@@ -116,7 +116,7 @@ class CIMonolog
         // Step 2: spin up the Monolog instance and get going
 
         $this->log = new Logger($cimp_config['channel']);
-        
+
         // detect and register all PHP errors in this log hence forth
         ErrorHandler::register($this->log);
 
@@ -316,7 +316,7 @@ class CIMonolog
                         $failsafe->log(Loggly::ERROR, 'CI Monolog: Environment is ' . ENVIRONMENT . ', not activating PHP Console error logging.');
                     }
                 } else {
-                    $errHnd = new \Monolog\Handler\PHPConsoleHandler(array(), null, $threshold);
+                    $errHnd = new \Monolog\Handler\PHPConsoleHandler([], null, $threshold);
                     if ($failsafe !== false) {
                         $failsafe->log(Logger::DEBUG, 'addLogHandler: log handler for PHP Console set up');
                     }
@@ -362,7 +362,7 @@ class CIMonolog
         // filter out anything in $this->>config['exclusion_list']
         if (!empty($this->config['exclusion_list'])) {
             foreach ($this->config['exclusion_list'] as $findme) {
-                $pos = strpos($msg, $findme);
+                $pos = strpos((string) $msg, (string) $findme);
                 if ($pos !== false) {
                     // just exit now - we don't want to log this error
                     return true;
@@ -374,19 +374,11 @@ class CIMonolog
             return true;
         };
 
-        switch ($level) {
-            case 'ERROR':
-                $this->log->error($msg);
-                break;
-
-            case 'DEBUG':
-                $this->log->debug($msg);
-                break;
-
-            default:
-                $this->log->info($msg);
-                break;
-        }
+        match ($level) {
+            'ERROR' => $this->log->error($msg),
+            'DEBUG' => $this->log->debug($msg),
+            default => $this->log->info($msg),
+        };
         return true;
     }
 

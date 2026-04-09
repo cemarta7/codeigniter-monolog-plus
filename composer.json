@@ -20,6 +20,8 @@
     	"psr-4": {
     		"CIMonologPlus\\": "src/"
     	}
-    }
+    },
+	"require-dev": {
+		"rector/rector": "^2.4"
+	}
 }
-
